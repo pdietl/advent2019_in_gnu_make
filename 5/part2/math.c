@@ -25,6 +25,7 @@ int plugin_is_GPL_compatible;
 
 void throw_error(const char *str, int *error, const char *func)
 {
+    printf("function %s, string '%s'\n", func, str);
     gmk_floc fl = { reading_file->filenm, reading_file->lineno };
     const char *format_string = "$(error " ERROR_PREFIX "function (%s) String '%s' in not representable as a long!)";
     int size = snprintf(NULL, 0, format_string, func, str);

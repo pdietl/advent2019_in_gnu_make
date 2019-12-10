@@ -80,11 +80,12 @@ op_to_string = $(strip \
 
 # list, index
 main = \
-	$(info called main) \
 	$(eval op_code := $(call get_op_code,$1,$2)) \
 	$(eval param_modes := $(call get_param_modes,$1,$2)) \
 	$(eval param_modes := $(call fill_back,0,$(param_modes),4)) \
+ \
 	$(info index=$2 op_code=$(op_code) ($(call op_to_string,$(op_code)))) \
+ \
 	$(if $(filter 01 02 07 08 99,$(op_code)), \
 		$(if $(filter 01,$(op_code)), \
 			$(eval result := $(add $(call get_argument,$2,$1,$(param_modes),1) \
@@ -104,40 +105,35 @@ main = \
 				$(call get_argument,$2,$1,$(param_modes),2))) \
 			$(if $(result),,$(eval result := 0)) \
 			) \
-		$(if $(filter 99,$(op_code)),$(error *** halting)$1, \
-			$(info else of halt) \
+		$(if $(filter 99,$(op_code)),$(info *** HALTING) $1, \
 			$(info storing value '$(result)' into index $(add 1 $(word $(add 3 $2),$1))) \
 			$(eval new_list := $(wordlist 1,$(word $(add 3 $2),$1),$1) $(result) $(wordlist $(add 2 $(word $(add 3 $2),$1)),$(words $1),$1)) \
 			$(call main,$(new_list),$(add 4 $2))) \
-		) \
-	$(info after halt) \
-	$(if $(filter 03 04,$(op_code)), \
-		$(info >>>>>>>>>>>>>>> in filter 03 04) \
-		$(if $(filter 03,$(op_code)), \
-			$(eval input := $(shell read -p 'input: ' -e; echo "$$REPLY")) \
-			$(info storing value '$(input)' into index $(add 1 $(word $(add 3 $2),$1))) \
-			$(eval new_list := $(wordlist 1,$(word $(add 1 $2),$1),$1) $(input) $(wordlist $(add 2 $(word $(add 1 $2),$1)),$(words $1),$1)) \
-			) \
-		$(if $(filter 04,$(op_code)), \
-			$(info $(word $(add 1 $(word $(add 1 $2),$1)),$1))) \
-		$(info >>> helo-[pppppp) \
-		$(call main,$(new_list),$(add 2 $2)) \
-		) \
-	$(info >>>>>>>>>>>>>>> AFTER filter 03 04) \
-	$(if $(filter 05 06,$(op_code)), \
-		$(info >>>>>>>>>>>>>>> in filter 05 06) \
-		$(eval true_or_false := $(call get_argument,$2,$1,$(param_modes),1)) \
-		$(eval jump_location := $(call get_argument,$2,$1,$(param_modes),2)) \
-		$(info true_or_false condition number := $(true_or_false)) \
-		$(info jump_location:=$(jump_location)) \
-		$(if $(filter 05,$(op_code)), \
-			$(if $(ne $(true_or_false),0), \
-				$(call main,$1,$(add 1 $(jump_location))))) \
-		$(if $(filter 06,$(op_code)), \
-			$(if $(eq $(true_or_false),0), \
-				$(call main,$1,$(add 1 $(jump_location))))) \
-		$(call main,$1,$(add 3 $2))) \
-	$(info >>>>>>>>>>>>>>> AFTER filter 05 06) 
+		, \
+		$(if $(filter 03 04,$(op_code)), \
+			$(if $(filter 03,$(op_code)), \
+				$(eval input := $(shell read -p 'input: ' -e; echo "$$REPLY")) \
+				$(info storing value '$(input)' into index $(add 1 $(word $(add 3 $2),$1))) \
+				$(eval new_list := $(wordlist 1,$(word $(add 1 $2),$1),$1) $(input) $(wordlist $(add 2 $(word $(add 1 $2),$1)),$(words $1),$1)) \
+				) \
+			$(if $(filter 04,$(op_code)), \
+				$(info $(word $(add 1 $(word $(add 1 $2),$1)),$1))) \
+			$(call main,$(new_list),$(add 2 $2)) \
+			,  \
+			$(if $(filter 05 06,$(op_code)), \
+				$(eval true_or_false := $(call get_argument,$2,$1,$(param_modes),1)) \
+				$(eval jump_location := $(call get_argument,$2,$1,$(param_modes),2)) \
+				$(info true_or_false condition number := $(true_or_false)) \
+				$(info jump_location:=$(jump_location)) \
+				$(if $(filter 05,$(op_code)), \
+					$(if $(ne $(true_or_false),0), \
+						$(call main,$1,$(add 1 $(jump_location))), \
+						$(call main,$1,$(add 3 $2))),  \
+				$(if $(filter 06,$(op_code)), \
+					$(if $(eq $(true_or_false),0), \
+						$(call main,$1,$(add 1 $(jump_location))), \
+						$(call main,$1,$(add 3 $2))))) \
+				)))
 
 helper = $(if $(filter 99,$1),99,$1 $(call helper,$(add $1 1)))
 
