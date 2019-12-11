@@ -21,11 +21,6 @@ from_x_upto_y   = \
     $(foreach x,$(wordlist 1,$(sub $2 $1 -1),$(FROM_n)), \
         $(priv_X)$(eval priv_X := $(add 1 $(priv_X))))
 
-from_x_downto_y = \
-    $(eval priv_X := $1) \
-    $(foreach x,$(wordlist 1,$(sub $1 $2 -1),$(FROM_n)), \
-        $(priv_X)$(eval priv_X := $(sub $(priv_X) 1)))
-
 NUMBERS := 0 1 2 3 4 5 6 7 8 9 
 
 split_helper = \
@@ -69,24 +64,7 @@ $(if $(wildcard math.so), \
     $(eval load math.so), \
     $(eval math.so:))
 
-# perms
-runner = $(strip \
-	$(shell echo $$'$(firstword $1)\n0' > out) \
-	$(foreach n,$(call tail,$1), \
-		$(eval v := $(shell $(MAKE) -f subMakefile < out | sed '/make.*/d')) \
-		$(shell echo $$'$(n)\n$(v)' > out) \
-		) \
-	$(eval v := $(shell $(MAKE) -f subMakefile < out | sed '/make.*/d')) \
-	$(v) \
-)
-
-main = $(strip \
-	$(foreach n,$(call permute,0 1 2 3 4), \
-		$(eval thrusts := $(thrusts) $(call runner,$(call split,$(n)))) \
-		) \
-	$(call find_largest,$(firstword $(thrusts)),$(call tail,$(thrusts))) \
-)
-
+THRUST_FILE := all_thrusts
 NUMBER_AMPS := 5
 
 # perm inputs
@@ -104,20 +82,22 @@ run_a_permutation = \
 		exec 4>0; \
 		exec 3<0; \
 		read -u 3; \
-		echo $$REPLY >> all_thrusts; \
+		echo $$REPLY >> $(THRUST_FILE); \
 		rm $(call from_x_upto_y,0,$(sub $(NUMBER_AMPS) 1)); \
 		kill $$keep_open_pid;
+	
 all:
-	rm -f all_thrusts
+	@rm -f $(THRUST_FILE)
 	$(foreach n,$(call permute,5 6 7 8 9), \
 		$(eval l := $(call split,$(n)))$(NL) \
-		$(call run_a_permutation,$(l)) \
+		@$(call run_a_permutation,$(l)) \
 		)
-	$(MAKE) --no-print -f $(ROOT_DIR)Makefile calc_max
+	@$(MAKE) --no-print -f $(ROOT_DIR)Makefile calc_max
+	@rm $(THRUST_FILE)
 
 calc_max:
-	$(eval l := $(shell cat all_thrusts))
-	$(info $(call find_largest,$(firstword $(l)),$(call tail,$(l))))
+	$(eval l := $(shell cat $(THRUST_FILE)))
+	$(info ANSWER := $(call find_largest,$(firstword $(l)),$(call tail,$(l))))
 
 # We recall this makefile if we are making math.so for the first time
 # when we call ourselves, 'all' will then be the default target
@@ -127,4 +107,3 @@ math.so: math.c
 
 clean:
 	$(RM) *.so
-
