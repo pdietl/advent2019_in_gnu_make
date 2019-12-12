@@ -108,16 +108,18 @@ main = $(strip \
 	$(eval layers_list := $(call reverse,$(call make_layers,$(call split,$1),$(mul $2 $3)))) \
 	$(eval image := $(call make_image,$(call split,$(firstword $(layers_list))),$(call tail,$(layers_list)))) \
 	$(eval image_in_lines := $(call break_image_into_lines,$(image),$2)) \
+	echo -ne $$' \
 	$(foreach l,$(image_in_lines), \
 		$(eval line := $(call split,$l)) \
 		$(foreach p,$(line), \
 			$(if $(filter $(BLACK),$(p)), \
-				echo -ne '\e[41m ';, \
-				echo -ne '\e[42m '; \
+				\e[41m , \
+				\e[42m \
 			) \
 		) \
-		echo -e '\e[49m'; \
+		\e[49m\n \
 	) \
+	' \
 )
 
 # If math.so doesn't exist, then don't load it,
